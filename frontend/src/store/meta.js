@@ -19,4 +19,10 @@ export const useMeta = create((set, get) => ({
 }));
 
 export const deptName = (meta, code) => meta?.departments.find((d) => d.code === code)?.name || code;
+
+// Compact label for tight spots like a closed dropdown, e.g. "CSE · Computer Science".
+export const deptLabel = (meta, code, empty) => {
+  const d = meta?.departments.find((x) => x.code === code);
+  return d ? `${d.code} · ${d.short || d.name}` : empty;
+};
 export const examName = (meta, code) => meta?.examTypes.find((e) => e.code === code)?.name || code;

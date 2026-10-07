@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { FileStack, Pencil, Search, Trash2, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 import { api, errorMessage, fieldErrors } from "../../lib/api";
-import { useMeta } from "../../store/meta";
+import { useMeta, deptLabel } from "../../store/meta";
 import { formatDate, formatNumber } from "../../lib/format";
 import { Badge, Button, Card, EmptyState, Modal, Pagination, Select, Spinner } from "../../components/ui";
 import { FileDrop, PaperFields, toFormData } from "./PaperForm";
@@ -61,7 +61,7 @@ export default function ManagePapers() {
             className="h-10 w-full rounded-xl border border-line-strong bg-surface pl-10 pr-3 text-sm placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
           />
         </div>
-        <Select value={department} onChange={(e) => { setDepartment(e.target.value); setPage(1); }} className="sm:w-56" aria-label="Department">
+        <Select value={department} onChange={(e) => { setDepartment(e.target.value); setPage(1); }} display={deptLabel(meta, department, "All departments")} className="sm:w-60" aria-label="Department">
           <option value="">All departments</option>
           {meta?.departments.map((d) => <option key={d.code} value={d.code}>{d.code} · {d.name}</option>)}
         </Select>

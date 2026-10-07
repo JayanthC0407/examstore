@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { FileText, UploadCloud, X } from "lucide-react";
 import { api } from "../../lib/api";
-import { useMeta } from "../../store/meta";
+import { useMeta, deptLabel } from "../../store/meta";
 import { formatBytes, ordinal } from "../../lib/format";
 import { Field, Input, Select, Textarea, cx } from "../../components/ui";
 
@@ -69,7 +69,7 @@ export function PaperFields({ values, onChange, errors = {} }) {
       </Field>
       <Field label="Department" error={errors.department}>
         {(id, invalid) => (
-          <Select id={id} invalid={invalid} value={values.department} onChange={set("department")}>
+          <Select id={id} invalid={invalid} value={values.department} display={deptLabel(meta, values.department, "Select department")} onChange={set("department")}>
             <option value="" disabled>Select department</option>
             {meta.departments.map((d) => <option key={d.code} value={d.code}>{d.code} · {d.name}</option>)}
           </Select>

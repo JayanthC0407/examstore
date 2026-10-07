@@ -85,21 +85,34 @@ export function Textarea({ invalid, className, ...props }) {
   );
 }
 
-export function Select({ invalid, className, children, ...props }) {
-  return (
+// `display` (optional) is the text shown while the select is closed, with a proper
+// ellipsis. Native selects clip long option labels mid-word, so use it when the
+// options are longer than the control. The open list still shows the full labels.
+export function Select({ invalid, className, children, display, ...props }) {
+  const select = (
     <select
       className={cx(
         control,
         "h-10 appearance-none pr-9 bg-no-repeat bg-[right_0.75rem_center] bg-[length:16px]",
         "bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8e99' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")]",
         invalid ? "border-danger" : "border-line-strong",
-        className
+        display === undefined ? className : "text-transparent [&_option]:text-fg"
       )}
       aria-invalid={invalid || undefined}
+      title={display}
       {...props}
     >
       {children}
     </select>
+  );
+  if (display === undefined) return select;
+  return (
+    <div className={cx("relative", className)}>
+      {select}
+      <span aria-hidden className="pointer-events-none absolute inset-y-0 left-3.5 right-9 truncate text-sm leading-10 text-fg">
+        {display}
+      </span>
+    </div>
   );
 }
 

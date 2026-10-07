@@ -1,19 +1,20 @@
 // Single source of truth for the catalogue taxonomy. The frontend reads this
 // from GET /api/meta, so adding a department here is all that's needed.
+// `short` is shown where space is tight (e.g. a closed dropdown).
 export const DEPARTMENTS = [
-  { code: "CSE", name: "Computer Science & Engineering" },
-  { code: "ECE", name: "Electronics & Communication Engineering" },
-  { code: "EEE", name: "Electrical & Electronics Engineering" },
-  { code: "ME", name: "Mechanical Engineering" },
-  { code: "CE", name: "Civil Engineering" },
-  { code: "CHE", name: "Chemical Engineering" },
-  { code: "MME", name: "Metallurgical & Materials Engineering" },
-  { code: "BT", name: "Biotechnology" },
-  { code: "MA", name: "Mathematics" },
-  { code: "PH", name: "Physics" },
-  { code: "CY", name: "Chemistry" },
-  { code: "HS", name: "Humanities & Social Sciences" },
-  { code: "SM", name: "School of Management" },
+  { code: "CSE", name: "Computer Science & Engineering", short: "Computer Science" },
+  { code: "ECE", name: "Electronics & Communication Engineering", short: "Electronics & Comm." },
+  { code: "EEE", name: "Electrical & Electronics Engineering", short: "Electrical" },
+  { code: "ME", name: "Mechanical Engineering", short: "Mechanical" },
+  { code: "CE", name: "Civil Engineering", short: "Civil" },
+  { code: "CHE", name: "Chemical Engineering", short: "Chemical" },
+  { code: "MME", name: "Metallurgical & Materials Engineering", short: "Metallurgy" },
+  { code: "BT", name: "Biotechnology", short: "Biotechnology" },
+  { code: "MA", name: "Mathematics", short: "Mathematics" },
+  { code: "PH", name: "Physics", short: "Physics" },
+  { code: "CY", name: "Chemistry", short: "Chemistry" },
+  { code: "HS", name: "Humanities & Social Sciences", short: "Humanities" },
+  { code: "SM", name: "School of Management", short: "Management" },
 ];
 
 export const EXAM_TYPES = [

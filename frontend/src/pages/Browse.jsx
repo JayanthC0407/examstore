@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FileSearch, Search, SlidersHorizontal, X } from "lucide-react";
 import { api, errorMessage } from "../lib/api";
-import { useMeta, deptName, examName } from "../store/meta";
+import { useMeta, deptName, deptLabel, examName } from "../store/meta";
 import PaperCard, { PaperCardSkeleton } from "../components/PaperCard";
 import { Button, EmptyState, Pagination, Select } from "../components/ui";
 import { ordinal } from "../lib/format";
@@ -66,7 +66,7 @@ export default function Browse() {
 
   const filters = meta && (
     <div className="space-y-4">
-      <FilterSelect label="Department" value={params.get("department")} onChange={(v) => update({ department: v })}>
+      <FilterSelect label="Department" value={params.get("department")} display={deptLabel(meta, params.get("department"), "All")} onChange={(v) => update({ department: v })}>
         {meta.departments.map((d) => (
           <option key={d.code} value={d.code}>{d.code} · {d.name}</option>
         ))}
@@ -104,7 +104,7 @@ export default function Browse() {
         <p className="mt-1 text-muted">Search by subject name or code, then narrow down with filters.</p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[264px_1fr]">
         {/* Filters: sticky sidebar on desktop */}
         <aside className="hidden lg:block">
           <div className="sticky top-24 rounded-2xl border border-line bg-surface p-4">{filterPanel}</div>
@@ -208,11 +208,11 @@ export default function Browse() {
   );
 }
 
-function FilterSelect({ label, value, onChange, children }) {
+function FilterSelect({ label, value, onChange, display, children }) {
   return (
     <label className="block space-y-1.5">
       <span className="text-xs font-medium uppercase tracking-wide text-subtle">{label}</span>
-      <Select value={value || ""} onChange={(e) => onChange(e.target.value)}>
+      <Select value={value || ""} display={display} onChange={(e) => onChange(e.target.value)}>
         <option value="">All</option>
         {children}
       </Select>
