@@ -6,6 +6,36 @@ Previous-year question papers in one place. **Students** search, preview and dow
 
 > Hosted on Render's free plan: after 15 minutes without visitors the site sleeps, so the first visit can take 30–60 seconds to load.
 
+## Screenshots
+
+*Shown with sample data.*
+
+### For students
+
+![Home page with search, stats and departments](docs/screenshots/home.webp)
+
+| Browse and filter | Read a paper in the browser |
+|---|---|
+| ![Browsing CSE papers with filters](docs/screenshots/browse.webp) | ![Paper page with the built-in PDF viewer](docs/screenshots/paper.webp) |
+
+### For admins
+
+| Dashboard | Upload a paper |
+|---|---|
+| ![Admin dashboard with stats, recent uploads and most downloaded](docs/screenshots/admin-overview.webp) | ![Upload form with a PDF attached and details filled in](docs/screenshots/admin-upload.webp) |
+
+![Managing papers: search, edit and delete](docs/screenshots/admin-papers.webp)
+
+### Dark mode and mobile
+
+![Search results in dark mode](docs/screenshots/browse-dark.webp)
+
+<p align="center">
+  <img src="docs/screenshots/mobile-home.webp" alt="Home page on a phone" width="260" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-paper.webp" alt="Reading a paper on a phone" width="260" />
+</p>
+
 ## Quick start
 
 Requires Node.js 20+.
