@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+/* Theme tokens. Components use semantic utilities (bg-surface, text-muted, …)
+   so light/dark is handled entirely here. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --surface-2: #f1efe9;
+  --line: #e6e2d8;
+  --line-strong: #d3cec1;
+  --fg: #191c26;
+  --muted: #5d6270;
+  --subtle: #8a8e99;
+  --primary: #2f3fd1;
+  --primary-hover: #2532b3;
+  --primary-soft: #eceefd;
+  --on-primary: #ffffff;
+  --accent: #b86e00;
+  --accent-soft: #fbefd9;
+  --danger: #c0352b;
+  --danger-soft: #fdecea;
+  --success: #1c7a4a;
+  --success-soft: #e3f4ea;
+  --shadow: 0 1px 2px rgb(25 28 38 / 0.04), 0 4px 16px rgb(25 28 38 / 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f1117;
+    --surface: #171a22;
+    --surface-2: #1e222c;
+    --line: #272b36;
+    --line-strong: #353a47;
+    --fg: #e9eaef;
+    --muted: #a0a5b2;
+    --subtle: #727887;
+    --primary: #8d98ff;
+    --primary-hover: #a6afff;
+    --primary-soft: #20253f;
+    --on-primary: #0f1117;
+    --accent: #f0b55a;
+    --accent-soft: #2e2516;
+    --danger: #ff8a7f;
+    --danger-soft: #331b1a;
+    --success: #6fd49c;
+    --success-soft: #16291f;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1117;
+  --surface: #171a22;
+  --surface-2: #1e222c;
+  --line: #272b36;
+  --line-strong: #353a47;
+  --fg: #e9eaef;
+  --muted: #a0a5b2;
+  --subtle: #727887;
+  --primary: #8d98ff;
+  --primary-hover: #a6afff;
+  --primary-soft: #20253f;
+  --on-primary: #0f1117;
+  --accent: #f0b55a;
+  --accent-soft: #2e2516;
+  --danger: #ff8a7f;
+  --danger-soft: #331b1a;
+  --success: #6fd49c;
+  --success-soft: #16291f;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-bg text-fg font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  ::selection {
+    background: var(--primary-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@utility shadow-card {
+  box-shadow: var(--shadow);
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+}
+
+/* Subtle ruled-paper texture used in the hero. */
+@utility bg-ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    color-mix(in srgb, var(--line) 70%, transparent) 31px,
+    color-mix(in srgb, var(--line) 70%, transparent) 32px
+  );
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@utility animate-fade-up {
+  animation: fade-up 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

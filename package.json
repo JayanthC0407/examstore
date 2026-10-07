@@ -1,0 +1,23 @@
+{
+  "name": "examstore",
+  "private": true,
+  "version": "1.0.0",
+  "description": "ExamStore — previous-year question papers for students, managed by admins.",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w frontend",
+    "start": "npm run start -w backend",
+    "make-admin": "npm run make-admin -w backend --",
+    "lint": "npm run lint -w frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

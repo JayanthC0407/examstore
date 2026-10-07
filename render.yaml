@@ -1,0 +1,37 @@
+# Render Blueprint: one web service that serves both the API and the built frontend.
+# Secrets marked `sync: false` are entered in the Render dashboard, never committed.
+services:
+  - type: web
+    name: examstore
+    runtime: node
+    plan: free
+    region: singapore
+    # Dev dependencies (Vite, Tailwind) are needed to build the frontend.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      # Skip the ~600 MB local-MongoDB download; production uses Atlas.
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: ALLOWED_EMAIL_DOMAINS
+        value: student.nitw.ac.in
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: STORAGE_DRIVER
+        value: cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
