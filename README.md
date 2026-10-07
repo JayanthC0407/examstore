@@ -2,6 +2,10 @@
 
 Previous-year question papers in one place. **Students** search, preview and download papers; **admins** upload and manage them. Both sides live in one web app, and the role on your account decides what you see.
 
+**Live site:** https://examstore.onrender.com
+
+> Hosted on Render's free plan: after 15 minutes without visitors the site sleeps, so the first visit can take 30–60 seconds to load.
+
 ## Quick start
 
 Requires Node.js 20+.
