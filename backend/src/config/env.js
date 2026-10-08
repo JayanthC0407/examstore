@@ -38,6 +38,12 @@ export const env = {
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   },
+  mail: {
+    apiKey: process.env.BREVO_API_KEY || "",
+    fromEmail: process.env.MAIL_FROM || "",
+    fromName: process.env.MAIL_FROM_NAME || "ExamStore",
+    apiUrl: process.env.BREVO_API_URL || "https://api.brevo.com",
+  },
   dataDir: path.join(BACKEND_ROOT, ".data"),
   uploadsDir: path.join(BACKEND_ROOT, "uploads"),
   frontendDist: path.resolve(BACKEND_ROOT, "../frontend/dist"),

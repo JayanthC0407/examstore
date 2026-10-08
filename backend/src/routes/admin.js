@@ -5,6 +5,9 @@ import Paper from "../models/Paper.js";
 import PaperRequest from "../models/PaperRequest.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { badRequest, notFound, escapeRegex, toInt } from "../lib/http.js";
+import { getSettings, updateSettings } from "../lib/settings.js";
+import { canSendCodes, mailConfigured } from "../lib/mail.js";
+import { env } from "../config/env.js";
 
 const router = Router();
 router.use(requireAdmin);
@@ -66,6 +69,26 @@ router.patch("/users/:id/role", async (req, res) => {
   const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
   if (!user) throw notFound("User not found");
   res.json({ user: user.toPublic() });
+});
+
+// Site settings. `mail` tells the console whether a switch can take effect.
+async function settingsResponse() {
+  const s = await getSettings();
+  return {
+    emailVerification: s.emailVerification,
+    updatedAt: s.updatedAt,
+    mail: { configured: mailConfigured, canSendCodes, mode: mailConfigured ? "brevo" : env.isProd ? "off" : "console" },
+  };
+}
+
+router.get("/settings", async (_req, res) => {
+  res.json(await settingsResponse());
+});
+
+router.patch("/settings", async (req, res) => {
+  if (typeof req.body.emailVerification !== "boolean") throw badRequest("emailVerification must be true or false");
+  await updateSettings({ emailVerification: req.body.emailVerification }, req.user._id);
+  res.json(await settingsResponse());
 });
 
 export default router;

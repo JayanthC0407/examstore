@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, select: false },
     role: { type: String, enum: ["student", "admin"], default: "student", index: true },
     lastLoginAt: Date,
+    emailVerifiedAt: Date, // set when the account was created through an emailed code
   },
   { timestamps: true }
 );

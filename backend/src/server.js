@@ -2,6 +2,7 @@ import { env } from "./config/env.js";
 import { connectDB, disconnectDB } from "./lib/db.js";
 import { createApp } from "./app.js";
 import { storage } from "./lib/storage.js";
+import { verifyMail } from "./lib/mail.js";
 
 try {
   await connectDB();
@@ -17,6 +18,8 @@ try {
   console.error("[storage]", err.message);
   process.exit(1);
 }
+
+await verifyMail();
 
 const server = createApp().listen(env.port, () => {
   console.log(`[api] ExamStore running on http://localhost:${env.port}`);

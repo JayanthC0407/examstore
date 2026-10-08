@@ -70,9 +70,11 @@ export function createApp() {
       return res.status(400).json({ message: "Please check the submitted details", details: err.errors });
     }
     const status = err instanceof HttpError ? err.status : err.status || 500;
-    if (status >= 500) console.error(err);
+    // Messages we wrote on purpose (HttpError) are shown even for 5xx; unexpected errors are hidden.
+    const unexpected = status >= 500 && !(err instanceof HttpError);
+    if (unexpected) console.error(err);
     res.status(status).json({
-      message: status >= 500 ? "Something went wrong on our side" : err.message,
+      message: unexpected ? "Something went wrong on our side" : err.message,
       details: err.details,
     });
   });

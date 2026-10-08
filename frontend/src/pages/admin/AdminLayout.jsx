@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { FileStack, Inbox, LayoutDashboard, Upload, Users } from "lucide-react";
+import { FileStack, Inbox, LayoutDashboard, Settings, Upload, Users } from "lucide-react";
 import { api } from "../../lib/api";
 import { cx } from "../../components/ui";
 
@@ -10,6 +10,7 @@ const TABS = [
   { to: "/admin/requests", label: "Requests", icon: Inbox, badge: true },
   { to: "/admin/papers", label: "Papers", icon: FileStack },
   { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export default function AdminLayout() {

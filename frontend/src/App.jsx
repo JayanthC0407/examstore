@@ -19,6 +19,7 @@ import Upload from "./pages/admin/Upload";
 import ManagePapers from "./pages/admin/ManagePapers";
 import ManageUsers from "./pages/admin/ManageUsers";
 import Requests from "./pages/admin/Requests";
+import AdminSettings from "./pages/admin/Settings";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -72,6 +73,7 @@ export default function App() {
               <Route path="requests" element={<Requests />} />
               <Route path="papers" element={<ManagePapers />} />
               <Route path="users" element={<ManageUsers />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
           </Route>
 

@@ -69,10 +69,10 @@ export default function Account() {
         <form onSubmit={savePw} className="mt-4 space-y-4">
           {pwError && <div role="alert" className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{pwError}</div>}
           <Field label="Current password">
-            {(id) => <Input id={id} type="password" autoComplete="current-password" value={pw.currentPassword} onChange={(e) => setPw({ ...pw, currentPassword: e.target.value })} required />}
+            {(id) => <Input id={id} type="password" autoComplete="current-password" value={pw.currentPassword} onChange={(e) => { const v = e.target.value; setPw((p) => ({ ...p, currentPassword: v })); }} required />}
           </Field>
           <Field label="New password" hint="At least 8 characters">
-            {(id) => <Input id={id} type="password" autoComplete="new-password" value={pw.newPassword} onChange={(e) => setPw({ ...pw, newPassword: e.target.value })} required />}
+            {(id) => <Input id={id} type="password" autoComplete="new-password" value={pw.newPassword} onChange={(e) => { const v = e.target.value; setPw((p) => ({ ...p, newPassword: v })); }} required />}
           </Field>
           <Button type="submit" loading={savingPw} disabled={!pw.currentPassword || !pw.newPassword}>
             Update password

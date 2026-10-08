@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
@@ -93,10 +93,10 @@ export function Login() {
       <form onSubmit={submit} className="space-y-4" noValidate>
         {error && <div role="alert" className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</div>}
         <Field label="Email">
-          {(id) => <Input id={id} type="email" autoComplete="email" required autoFocus value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}
+          {(id) => <Input id={id} type="email" autoComplete="email" required autoFocus value={form.email} onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, email: v })); }} />}
         </Field>
         <Field label="Password">
-          {(id) => <PasswordInput id={id} autoComplete="current-password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />}
+          {(id) => <PasswordInput id={id} autoComplete="current-password" required value={form.password} onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, password: v })); }} />}
         </Field>
         <Button type="submit" className="w-full" size="lg" loading={busy}>Sign in</Button>
       </form>
@@ -111,7 +111,11 @@ export function Signup() {
   const [form, setForm] = useState({ fullName: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [verification, setVerification] = useState(null);
   const domain = meta?.allowedDomains?.[0];
+
+  const welcome = (user) =>
+    toast.success(user.role === "admin" ? "Admin account created" : "Account created. Happy studying!");
 
   const submit = async (e) => {
     e.preventDefault();
@@ -119,33 +123,135 @@ export function Signup() {
     setBusy(true);
     setError("");
     try {
-      const user = await signup(form);
-      toast.success(user.role === "admin" ? "Admin account created" : "Account created. Happy studying!");
+      const data = await signup(form);
+      if (data.user) return welcome(data.user);
+      setVerification(data.verification);
     } catch (err) {
       setError(errorMessage(err));
-      setBusy(false);
     }
+    setBusy(false);
   };
+
+  if (verification) {
+    return (
+      <AuthShell
+        title="Check your email"
+        subtitle={<>We sent a 6-digit code to <span className="font-medium text-fg">{verification.email}</span>. Enter it to finish creating your account.</>}
+        footer={<>Wrong email? <button onClick={() => setVerification(null)} className="font-medium text-primary hover:underline">Go back</button></>}
+      >
+        <VerifyCode verification={verification} onRestart={() => setVerification(null)} onVerified={welcome} />
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell
       title="Create your account"
-      subtitle="Use your institute email to get access."
+      subtitle={meta?.emailVerification ? "Use your institute email. We'll send a code to confirm it." : "Use your institute email to get access."}
       footer={<>Already have an account? <Link to="/login" state={location.state} className="font-medium text-primary hover:underline">Sign in</Link></>}
     >
       <form onSubmit={submit} className="space-y-4" noValidate>
         {error && <div role="alert" className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</div>}
         <Field label="Full name">
-          {(id) => <Input id={id} autoComplete="name" required autoFocus value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />}
+          {(id) => <Input id={id} autoComplete="name" required autoFocus value={form.fullName} onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, fullName: v })); }} />}
         </Field>
         <Field label="Institute email" hint={domain && `Must end with @${domain}`}>
-          {(id) => <Input id={id} type="email" autoComplete="email" required placeholder={domain ? `rollno@${domain}` : ""} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}
+          {(id) => <Input id={id} type="email" autoComplete="email" required placeholder={domain ? `rollno@${domain}` : ""} value={form.email} onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, email: v })); }} />}
         </Field>
         <Field label="Password" hint="At least 8 characters">
-          {(id) => <PasswordInput id={id} autoComplete="new-password" required minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />}
+          {(id) => <PasswordInput id={id} autoComplete="new-password" required minLength={8} value={form.password} onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, password: v })); }} />}
         </Field>
-        <Button type="submit" className="w-full" size="lg" loading={busy}>Create account</Button>
+        <Button type="submit" className="w-full" size="lg" loading={busy}>
+          {meta?.emailVerification ? "Continue" : "Create account"}
+        </Button>
       </form>
     </AuthShell>
+  );
+}
+
+// Second step of sign-up: enter the emailed code; resend after a short wait.
+function VerifyCode({ verification, onVerified, onRestart }) {
+  const verifySignup = useAuth((s) => s.verifySignup);
+  const resendSignupCode = useAuth((s) => s.resendSignupCode);
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [expired, setExpired] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [wait, setWait] = useState(verification.resendInSeconds);
+
+  useEffect(() => {
+    if (wait <= 0) return;
+    const t = setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+
+  const verify = async (value = code) => {
+    if (!/^\d{6}$/.test(value)) return setError("Enter the 6-digit code from the email");
+    setBusy(true);
+    setError("");
+    try {
+      onVerified(await verifySignup(verification.email, value));
+    } catch (err) {
+      setError(errorMessage(err));
+      const status = err?.response?.status;
+      if (status === 410 || status === 429) setExpired(status === 410 || /sign up again/i.test(errorMessage(err)));
+      setCode("");
+      setBusy(false);
+    }
+  };
+
+  const resend = async () => {
+    setError("");
+    setExpired(false);
+    try {
+      const v = await resendSignupCode(verification.email);
+      setWait(v.resendInSeconds);
+      toast.success("A new code is on its way");
+    } catch (err) {
+      setError(errorMessage(err));
+      const status = err?.response?.status;
+      if (status === 410) setExpired(true);
+      if (err?.response?.data?.details?.retryAfter) setWait(err.response.data.details.retryAfter);
+    }
+  };
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); verify(); }} className="space-y-4" noValidate>
+      {error && <div role="alert" className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</div>}
+      {expired ? (
+        <Button type="button" className="w-full" size="lg" onClick={onRestart}>Start again</Button>
+      ) : (
+        <>
+          <Field label="Verification code" hint="Check your spam folder if it hasn't arrived in a minute.">
+            {(id) => (
+              <Input
+                id={id}
+                value={code}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  setCode(v);
+                  if (v.length === 6 && !busy) verify(v);
+                }}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                maxLength={6}
+                placeholder="123456"
+                className="h-14 text-center font-mono text-2xl tracking-[0.5em] placeholder:tracking-[0.5em] placeholder:text-line-strong"
+              />
+            )}
+          </Field>
+          <Button type="submit" className="w-full" size="lg" loading={busy}>Verify and create account</Button>
+          <p className="text-center text-sm text-muted">
+            Didn&apos;t get it?{" "}
+            {wait > 0 ? (
+              <span className="tabular-nums">Resend in {wait}s</span>
+            ) : (
+              <button type="button" onClick={resend} className="font-medium text-primary hover:underline">Resend code</button>
+            )}
+          </p>
+        </>
+      )}
+    </form>
   );
 }
