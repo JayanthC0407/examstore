@@ -193,7 +193,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
       className={cx(
         "m-auto w-[calc(100%-2rem)] rounded-2xl border border-line bg-surface p-0 text-fg shadow-2xl",
         "backdrop:bg-black/40 backdrop:backdrop-blur-[2px]",
-        size === "lg" ? "max-w-2xl" : "max-w-md"
+        size === "xl" ? "max-w-6xl" : size === "lg" ? "max-w-2xl" : "max-w-md"
       )}
     >
       {open && (

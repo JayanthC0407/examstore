@@ -126,6 +126,7 @@ export default function Header() {
 
         <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Main">
           <NavLink to="/papers" className={navClass}>Browse papers</NavLink>
+          <NavLink to="/contribute" className={navClass}>Share a paper</NavLink>
           {user?.role === "admin" && <NavLink to="/admin" className={navClass}>Admin</NavLink>}
         </nav>
 
@@ -155,6 +156,7 @@ export default function Header() {
           <HeaderSearch className="mb-3" onDone={() => setMobileOpen(false)} />
           <nav className="flex flex-col gap-1" aria-label="Mobile">
             <NavLink to="/papers" className={navClass}>Browse papers</NavLink>
+            <NavLink to="/contribute" className={navClass}>Share a paper</NavLink>
             {user?.role === "admin" && <NavLink to="/admin" className={navClass}>Admin console</NavLink>}
             {user && <NavLink to="/account" className={navClass}>Account</NavLink>}
           </nav>

@@ -24,15 +24,15 @@ export const toFormData = (values, file) => {
 
 let subjectsCache;
 
-// Metadata fields shared by the upload page and the edit dialog.
-export function PaperFields({ values, onChange, errors = {} }) {
+// Paper details shared by the admin upload page, the edit dialog, request review and the student request form.
+export function PaperFields({ values, onChange, errors = {}, showNotes = true }) {
   const meta = useMeta((s) => s.meta);
   const [subjects, setSubjects] = useState(subjectsCache || []);
   const listId = useId();
   const thisYear = new Date().getFullYear();
 
   useEffect(() => {
-    api.get("/admin/subjects").then((r) => {
+    api.get("/meta/subjects").then((r) => {
       subjectsCache = r.data.items;
       setSubjects(r.data.items);
     }).catch(() => {});
@@ -57,7 +57,7 @@ export function PaperFields({ values, onChange, errors = {} }) {
       <Field label="Subject code" error={errors.subjectCode} hint="Known codes fill in the rest">
         {(id, invalid) => (
           <>
-            <Input id={id} invalid={invalid} list={listId} value={values.subjectCode} onChange={onCode} placeholder="e.g. CS201" className="font-mono uppercase" autoComplete="off" />
+            <Input id={id} invalid={invalid} list={listId} value={values.subjectCode} onChange={onCode} placeholder="e.g. CS201" className="font-mono uppercase placeholder:normal-case" autoComplete="off" />
             <datalist id={listId}>
               {subjects.map((s) => <option key={s.subjectCode} value={s.subjectCode}>{s.subjectName}</option>)}
             </datalist>
@@ -93,9 +93,9 @@ export function PaperFields({ values, onChange, errors = {} }) {
           </Select>
         )}
       </Field>
-      <Field label="Notes" optional className="sm:col-span-2" error={errors.notes} hint="Shown to students, e.g. “Answer key included” or “Set B”">
+      {showNotes && <Field label="Notes" optional className="sm:col-span-2" error={errors.notes} hint="Shown to students, e.g. “Answer key included” or “Set B”">
         {(id, invalid) => <Textarea id={id} invalid={invalid} rows={2} maxLength={500} value={values.notes} onChange={set("notes")} />}
-      </Field>
+      </Field>}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.js";
 import paperRoutes from "./routes/papers.js";
 import adminRoutes from "./routes/admin.js";
 import metaRoutes from "./routes/meta.js";
+import requestRoutes from "./routes/requests.js";
 
 export function createApp() {
   const app = express();
@@ -39,6 +40,7 @@ export function createApp() {
   app.use("/api/auth", authRoutes);
   app.use("/api/meta", metaRoutes);
   app.use("/api/papers", paperRoutes);
+  app.use("/api/requests", requestRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api", (_req, _res, next) => next(new HttpError(404, "API route not found")));
 

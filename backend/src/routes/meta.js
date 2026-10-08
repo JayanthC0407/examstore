@@ -31,4 +31,22 @@ router.get("/", async (_req, res) => {
   });
 });
 
+// Known subjects, so the upload and request forms can autocomplete and stay consistent.
+router.get("/subjects", async (_req, res) => {
+  const subjects = await Paper.aggregate([
+    { $sort: { createdAt: -1 } },
+    {
+      $group: {
+        _id: "$subjectCode",
+        subjectName: { $first: "$subjectName" },
+        department: { $first: "$department" },
+        semester: { $first: "$semester" },
+        papers: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+  res.json({ items: subjects.map(({ _id, ...s }) => ({ subjectCode: _id, ...s })) });
+});
+
 export default router;

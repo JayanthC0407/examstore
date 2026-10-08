@@ -86,11 +86,11 @@ export default function Home() {
             <h2 className="font-display text-2xl font-semibold">The shelves are empty, for now</h2>
             <p className="mx-auto mt-2 max-w-md text-muted">
               No papers have been uploaded yet.{" "}
-              {user?.role === "admin" ? "Head to the admin console to add the first one." : "Check back soon."}
+              {user?.role === "admin" ? "Head to the admin console to add the first one." : "Have one? Share it and an admin will add it."}
             </p>
-            {user?.role === "admin" && (
-              <Button to="/admin/upload" className="mt-6">Upload the first paper</Button>
-            )}
+            <Button to={user?.role === "admin" ? "/admin/upload" : "/contribute"} className="mt-6">
+              {user?.role === "admin" ? "Upload the first paper" : "Share a paper"}
+            </Button>
           </section>
         ) : (
           <>
@@ -118,6 +118,14 @@ export default function Home() {
 
             <PaperShelf title="Recently added" to="/papers?sort=recent" papers={recent} />
             <PaperShelf title="Most downloaded" to="/papers?sort=popular" papers={popular} />
+
+            <section className="flex flex-col items-start gap-4 rounded-2xl border border-line bg-surface p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-display text-xl font-semibold">Have a paper that isn&apos;t here?</h2>
+                <p className="mt-1 text-sm text-muted">Share it. An admin checks it, then it&apos;s available to everyone.</p>
+              </div>
+              <Button to="/contribute" className="shrink-0">Share a paper</Button>
+            </section>
           </>
         )}
       </div>

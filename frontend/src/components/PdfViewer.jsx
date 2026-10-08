@@ -11,7 +11,7 @@ const MAX_PAGE_WIDTH = 900;
 
 // Renders just the paper's pages (no browser PDF chrome). Pages are drawn
 // lazily as they scroll into view so long papers stay light.
-export default function PdfViewer({ url, title }) {
+export default function PdfViewer({ url, title, height = "max-h-[80vh]" }) {
   const scrollRef = useRef(null);
   const [doc, setDoc] = useState(null);
   const [ratio, setRatio] = useState(1.414); // A4 portrait until the real size is known
@@ -79,7 +79,7 @@ export default function PdfViewer({ url, title }) {
         </div>
       </div>
 
-      <div ref={scrollRef} className="max-h-[80vh] overflow-auto p-3 sm:p-6" aria-label={title}>
+      <div ref={scrollRef} className={`${height} overflow-auto p-3 sm:p-6`} aria-label={title}>
         {error ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center text-sm text-muted">
             <FileWarning className="size-8 text-danger" />

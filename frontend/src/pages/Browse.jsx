@@ -181,9 +181,14 @@ export default function Browse() {
             <EmptyState
               icon={FileSearch}
               title="No papers found"
-              action={(active.length > 0 || params.get("q")) && <Button variant="secondary" onClick={() => setParams({})}>Clear search and filters</Button>}
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  {(active.length > 0 || params.get("q")) && <Button variant="secondary" onClick={() => setParams({})}>Clear search and filters</Button>}
+                  <Button to="/contribute">Share a paper</Button>
+                </div>
+              }
             >
-              Try a shorter search, a subject code, or fewer filters.
+              Try a shorter search, a subject code, or fewer filters. Have the paper? Share it so others can find it too.
             </EmptyState>
           ) : (
             <div className="space-y-8">

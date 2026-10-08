@@ -1,10 +1,10 @@
-import crypto from "node:crypto";
 import { Router } from "express";
 import mongoose from "mongoose";
 import Paper from "../models/Paper.js";
 import { DEPARTMENT_CODES, EXAM_TYPE_CODES } from "../config/catalog.js";
-import { HttpError, badRequest, notFound, escapeRegex, toInt } from "../lib/http.js";
+import { notFound, escapeRegex, toInt } from "../lib/http.js";
 import { storage } from "../lib/storage.js";
+import { parsePaperInput, inspectPdf, storePdf, sendPdf } from "../lib/papers.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { uploadPdf } from "../middleware/upload.js";
 
@@ -22,67 +22,6 @@ async function findPaper(id) {
   const paper = await Paper.findById(id);
   if (!paper) throw notFound("Paper not found");
   return paper;
-}
-
-// Validates admin-submitted metadata. With partial=true only provided fields are checked.
-function parsePaperInput(body, { partial = false } = {}) {
-  const out = {};
-  const errors = {};
-  const has = (k) => body[k] !== undefined && body[k] !== "";
-
-  if (has("subjectName")) out.subjectName = String(body.subjectName).trim();
-  else if (!partial) errors.subjectName = "Subject name is required";
-
-  if (has("subjectCode")) out.subjectCode = String(body.subjectCode).trim().toUpperCase();
-  else if (!partial) errors.subjectCode = "Subject code is required";
-
-  if (has("department")) {
-    if (DEPARTMENT_CODES.includes(body.department)) out.department = body.department;
-    else errors.department = "Unknown department";
-  } else if (!partial) errors.department = "Department is required";
-
-  if (has("semester")) {
-    const s = toInt(body.semester);
-    if (s >= 1 && s <= 10) out.semester = s;
-    else errors.semester = "Semester must be between 1 and 10";
-  } else if (!partial) errors.semester = "Semester is required";
-
-  if (has("year")) {
-    const y = toInt(body.year);
-    if (y >= 1990 && y <= new Date().getFullYear() + 1) out.year = y;
-    else errors.year = "Enter a valid year";
-  } else if (!partial) errors.year = "Year is required";
-
-  if (has("examType")) {
-    if (EXAM_TYPE_CODES.includes(body.examType)) out.examType = body.examType;
-    else errors.examType = "Unknown exam type";
-  } else if (!partial) errors.examType = "Exam type is required";
-
-  if (body.notes !== undefined) out.notes = String(body.notes).trim().slice(0, 500);
-
-  if (Object.keys(errors).length) throw badRequest("Please fix the highlighted fields", errors);
-  return out;
-}
-
-async function storeUploadedFile(file) {
-  if (!file) throw badRequest("Please attach a PDF file", { file: "PDF file is required" });
-  if (file.buffer.subarray(0, 5).toString() !== "%PDF-") {
-    throw badRequest("That file isn't a valid PDF", { file: "Not a valid PDF" });
-  }
-  const sha256 = crypto.createHash("sha256").update(file.buffer).digest("hex");
-  const existing = await Paper.findOne({ "file.sha256": sha256 }).select("_id subjectName year");
-  if (existing) {
-    throw new HttpError(409, `This exact file is already uploaded (${existing.subjectName}, ${existing.year})`, {
-      duplicateOf: existing._id,
-    });
-  }
-  const saved = await storage.save(file.buffer);
-  return { ...saved, originalName: file.originalname, size: file.size, sha256 };
-}
-
-function downloadName(paper) {
-  const base = `${paper.subjectCode} ${paper.subjectName} ${paper.examType} ${paper.year}`;
-  return base.replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "_") + ".pdf";
 }
 
 // ---------- Public ----------
@@ -136,38 +75,19 @@ router.get("/:id", async (req, res) => {
 router.get("/:id/file", requireAuth, async (req, res) => {
   const paper = await findPaper(req.params.id);
   const asDownload = req.query.download === "1";
-
-  let stream;
-  try {
-    stream = await storage.open(paper.file);
-  } catch (err) {
-    console.error("[papers] file missing for", paper._id, err.message);
-    throw notFound("The file for this paper is missing. Please let an admin know.");
-  }
-
-  if (asDownload) await Paper.updateOne({ _id: paper._id }, { $inc: { downloads: 1 } });
-
-  // The page CSP would stop the browser's built-in PDF viewer from rendering.
-  res.removeHeader("Content-Security-Policy");
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `${asDownload ? "attachment" : "inline"}; filename="${downloadName(paper)}"`
-  );
-  if (paper.file.size) res.setHeader("Content-Length", paper.file.size);
-  res.setHeader("Cache-Control", "private, max-age=3600");
-  stream.on("error", (err) => {
-    console.error("[papers] stream error", err.message);
-    res.destroy(err);
+  await sendPdf(res, paper, {
+    asDownload,
+    // Count only once the file is known to exist.
+    onOpen: asDownload ? () => Paper.updateOne({ _id: paper._id }, { $inc: { downloads: 1 } }) : undefined,
   });
-  stream.pipe(res);
 });
 
 // ---------- Admin ----------
 
 router.post("/", requireAdmin, uploadPdf, async (req, res) => {
   const data = parsePaperInput(req.body);
-  const file = await storeUploadedFile(req.file);
+  const sha256 = await inspectPdf(req.file);
+  const file = await storePdf(req.file, sha256);
   const paper = await Paper.create({ ...data, file, uploadedBy: req.user._id });
   res.status(201).json({ paper });
 });
@@ -179,7 +99,7 @@ router.patch("/:id", requireAdmin, uploadPdf, async (req, res) => {
   let oldFile;
   if (req.file) {
     oldFile = paper.file;
-    paper.file = await storeUploadedFile(req.file);
+    paper.file = await storePdf(req.file, await inspectPdf(req.file));
   }
   await paper.save();
   if (oldFile) await storage.remove(oldFile).catch((e) => console.error("[papers] cleanup failed", e.message));

@@ -2,6 +2,7 @@ import { Router } from "express";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Paper from "../models/Paper.js";
+import PaperRequest from "../models/PaperRequest.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { badRequest, notFound, escapeRegex, toInt } from "../lib/http.js";
 
@@ -10,7 +11,7 @@ router.use(requireAdmin);
 
 router.get("/stats", async (_req, res) => {
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const [papers, users, admins, newUsers, totals, top, recent] = await Promise.all([
+  const [papers, users, admins, newUsers, totals, top, recent, pendingRequests] = await Promise.all([
     Paper.countDocuments(),
     User.countDocuments(),
     User.countDocuments({ role: "admin" }),
@@ -18,6 +19,7 @@ router.get("/stats", async (_req, res) => {
     Paper.aggregate([{ $group: { _id: null, downloads: { $sum: "$downloads" } } }]),
     Paper.find().sort({ downloads: -1 }).limit(5),
     Paper.find().sort({ createdAt: -1 }).limit(6).populate("uploadedBy", "fullName"),
+    PaperRequest.countDocuments({ status: "pending" }),
   ]);
 
   res.json({
@@ -28,25 +30,8 @@ router.get("/stats", async (_req, res) => {
     downloads: totals[0]?.downloads || 0,
     top,
     recent,
+    pendingRequests,
   });
-});
-
-// Known subjects, so the upload form can autocomplete and stay consistent.
-router.get("/subjects", async (_req, res) => {
-  const subjects = await Paper.aggregate([
-    { $sort: { createdAt: -1 } },
-    {
-      $group: {
-        _id: "$subjectCode",
-        subjectName: { $first: "$subjectName" },
-        department: { $first: "$department" },
-        semester: { $first: "$semester" },
-        papers: { $sum: 1 },
-      },
-    },
-    { $sort: { _id: 1 } },
-  ]);
-  res.json({ items: subjects.map(({ _id, ...s }) => ({ subjectCode: _id, ...s })) });
 });
 
 router.get("/users", async (req, res) => {

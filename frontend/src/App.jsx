@@ -11,12 +11,14 @@ import Browse from "./pages/Browse";
 import PaperDetail from "./pages/PaperDetail";
 import { Login, Signup } from "./pages/Auth";
 import Account from "./pages/Account";
+import Contribute from "./pages/Contribute";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./pages/admin/AdminLayout";
 import Overview from "./pages/admin/Overview";
 import Upload from "./pages/admin/Upload";
 import ManagePapers from "./pages/admin/ManagePapers";
 import ManageUsers from "./pages/admin/ManageUsers";
+import Requests from "./pages/admin/Requests";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -60,12 +62,14 @@ export default function App() {
 
           <Route element={<RequireAuth />}>
             <Route path="account" element={<Account />} />
+            <Route path="contribute" element={<Contribute />} />
           </Route>
 
           <Route element={<RequireAdmin />}>
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<Overview />} />
               <Route path="upload" element={<Upload />} />
+              <Route path="requests" element={<Requests />} />
               <Route path="papers" element={<ManagePapers />} />
               <Route path="users" element={<ManageUsers />} />
             </Route>

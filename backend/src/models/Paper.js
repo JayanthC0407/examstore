@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { DEPARTMENT_CODES, EXAM_TYPE_CODES } from "../config/catalog.js";
 
-const fileSchema = new mongoose.Schema(
+// Also used by PaperRequest: an accepted request hands its file to the new Paper.
+export const fileSchema = new mongoose.Schema(
   {
     provider: { type: String, enum: ["local", "cloudinary"], required: true },
     key: { type: String, required: true },

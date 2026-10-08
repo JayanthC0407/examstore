@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDownToLine, FileStack, Upload, UserPlus, Users } from "lucide-react";
+import { ArrowDownToLine, ArrowRight, FileStack, Inbox, Upload, UserPlus, Users } from "lucide-react";
 import { api, errorMessage } from "../../lib/api";
 import { formatNumber, timeAgo } from "../../lib/format";
 import { Button, Card, EmptyState, Skeleton } from "../../components/ui";
@@ -36,6 +36,16 @@ export default function Overview() {
 
   return (
     <div className="space-y-8">
+      {stats.pendingRequests > 0 && (
+        <Link to="/admin/requests" className="flex items-center gap-3 rounded-2xl border border-accent/40 bg-accent-soft px-5 py-4 transition hover:border-accent">
+          <Inbox className="size-5 shrink-0 text-accent" />
+          <span className="flex-1 text-sm">
+            <span className="font-semibold">{stats.pendingRequests} paper request{stats.pendingRequests === 1 ? "" : "s"}</span> from students{" "}
+            {stats.pendingRequests === 1 ? "is" : "are"} waiting for review
+          </span>
+          <ArrowRight className="size-4 text-accent" />
+        </Link>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={FileStack} label="Papers" value={formatNumber(stats.papers)} />
         <StatCard icon={ArrowDownToLine} label="Downloads" value={formatNumber(stats.downloads)} />
