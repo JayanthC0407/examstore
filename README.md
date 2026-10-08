@@ -79,6 +79,7 @@ Any of these works:
 | Filter by department, semester, year, exam type | ✓ | ✓ |
 | Preview PDF in the browser and download | ✓ (signed in) | ✓ |
 | Send in a missing paper for review, and follow its status | ✓ (signed in) | ✓ |
+| Reset a forgotten password with an emailed code | ✓ | ✓ |
 | Upload papers (drag and drop, subject autocomplete, duplicate detection) | | ✓ |
 | Review student requests: preview, correct details, accept and publish, or reject with a reason | | ✓ |
 | Edit details, replace the PDF, delete | | ✓ |
@@ -86,20 +87,20 @@ Any of these works:
 | Grant or revoke admin access | | ✓ |
 | Switch email verification at sign-up on or off | | ✓ |
 
-Only emails on `ALLOWED_EMAIL_DOMAINS` (default `student.nitw.ac.in`) can sign up, except those listed in `ADMIN_EMAILS`. While email verification is on, new accounts confirm their address with a 6-digit code (10-minute expiry, 5 tries, resend after 60 seconds).
+Only emails on `ALLOWED_EMAIL_DOMAINS` (default `student.nitw.ac.in`) can sign up, except those listed in `ADMIN_EMAILS`. While email verification is on, new accounts confirm their address with a 6-digit code (10-minute expiry, 5 tries, resend after 60 seconds). **Forgot password?** on the login page emails a code the same way; resetting or changing a password signs the account out on every other device.
 
 ## Project layout
 
 ```
 backend/            Express 5 + Mongoose API
   src/config/       env loading, catalogue (departments, exam types)
-  src/models/       User, Paper, PaperRequest, PendingSignup, Setting
+  src/models/       User, Paper, PaperRequest, PendingSignup, PasswordReset, Setting
   src/routes/       auth, papers, requests, admin, meta
   src/lib/          db (with local fallback), storage (local disk / Cloudinary),
                     papers (shared validation + PDF streaming), mail (Brevo), settings
   src/scripts/      make-admin
 frontend/           React 19 + Vite + Tailwind CSS 4
-  src/pages/        Home, Browse, PaperDetail, Auth (sign-up + code), Account,
+  src/pages/        Home, Browse, PaperDetail, Auth (sign-in, sign-up + code, forgot password), Account,
                     Contribute (share a paper), admin/* (Overview, Upload, Requests,
                     Papers, Users, Settings)
   src/components/   Header, Layout, PaperCard, PdfViewer (PDF.js), RequestStatus, ui primitives
@@ -114,6 +115,7 @@ To add a department or exam type, edit `backend/src/config/catalog.js`. The UI p
 |---|---|---|
 | POST | `/api/auth/signup` (emails a code, or signs up straight away when verification is off) | public |
 | POST | `/api/auth/signup/verify`, `/api/auth/signup/resend` | public |
+| POST | `/api/auth/password/forgot` (emails a reset code; same reply whether or not the account exists), `/api/auth/password/reset` | public |
 | POST | `/api/auth/login`, `/api/auth/logout` | public |
 | GET / PATCH | `/api/auth/me` · POST `/api/auth/me/password` | signed in |
 | GET | `/api/meta` (departments, years, stats), `/api/meta/subjects` (autocomplete) | public |
@@ -146,6 +148,6 @@ Set these environment variables on your host (Render, Railway, a VPS, …):
 - `JWT_SECRET`: required; a long random string
 - `ADMIN_EMAILS`, `ALLOWED_EMAIL_DOMAINS`: as above
 - `STORAGE_DRIVER=cloudinary` plus the `CLOUDINARY_*` keys: PDFs are stored as private files in Cloudinary, since most hosts' disks aren't persistent. Students never get a direct Cloudinary link; files are streamed through the backend after the sign-in check. Each paper remembers where its file is stored, so switching drivers later is safe.
-- `BREVO_API_KEY` and `MAIL_FROM` (optional): email sign-up codes through [Brevo](https://www.brevo.com)'s HTTPS API (free for 300 emails a day). Render's free plan blocks SMTP, so an HTTP email API is required there. `MAIL_FROM` must be a sender verified in Brevo; the server checks this at startup. Without these, production sign-up works without a code.
+- `BREVO_API_KEY` and `MAIL_FROM` (optional): email sign-up and password-reset codes through [Brevo](https://www.brevo.com)'s HTTPS API (free for 300 emails a day). Render's free plan blocks SMTP, so an HTTP email API is required there. `MAIL_FROM` must be a sender verified in Brevo; the server checks this at startup. Without these, production sign-up works without a code and password reset is unavailable.
 
 See `backend/.env.example` for every option.

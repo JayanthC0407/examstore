@@ -25,8 +25,9 @@ export async function attachUser(req, _res, next) {
   const token = req.cookies?.[COOKIE];
   if (!token) return next();
   try {
-    const { sub } = jwt.verify(token, env.jwtSecret);
-    req.user = await User.findById(sub);
+    const { sub, iat } = jwt.verify(token, env.jwtSecret);
+    const user = await User.findById(sub);
+    if (user?.sessionIsCurrent(iat)) req.user = user;
   } catch {
     // Expired or tampered token: treat as signed out.
   }

@@ -72,6 +72,25 @@ export async function verifyMail() {
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
+export function passwordResetEmail({ name, code, minutes }) {
+  const first = String(name).split(/\s+/)[0];
+  return {
+    subject: `${code} is your ExamStore password reset code`,
+    text: `Hi ${first},\n\nYour ExamStore password reset code is ${code}.\nIt expires in ${minutes} minutes.\n\nIf you didn't ask to reset your password, you can ignore this email. Your password won't change.`,
+    html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#191c26">
+  <p style="font-size:18px;font-weight:bold;margin:0 0 16px">ExamStore</p>
+  <p style="margin:0 0 16px">Hi ${escapeHtml(first)}, use this code to set a new password:</p>
+  <p style="font-size:32px;font-weight:bold;letter-spacing:8px;background:#eceefd;color:#2f3fd1;padding:16px;text-align:center;border-radius:12px;margin:0 0 16px">${code}</p>
+  <p style="margin:0 0 16px;color:#5d6270">It expires in ${minutes} minutes.</p>
+  <p style="margin:0;color:#8a8e99;font-size:13px">If you didn't ask to reset your password, you can ignore this email. Your password won't change.</p>
+</div>`,
+  };
+}
+
+// Password reset works whenever a code can actually be delivered (independent of the
+// sign-up verification switch).
+export const passwordResetAvailable = () => canSendCodes && !mailProblem;
+
 export function verificationEmail({ name, code, minutes }) {
   const first = String(name).split(/\s+/)[0];
   return {

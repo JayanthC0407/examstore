@@ -4,7 +4,8 @@ import bcrypt from "bcryptjs";
 import rateLimit from "express-rate-limit";
 import User from "../models/User.js";
 import PendingSignup from "../models/PendingSignup.js";
-import { sendMail, verificationEmail } from "../lib/mail.js";
+import PasswordReset from "../models/PasswordReset.js";
+import { sendMail, verificationEmail, passwordResetEmail, passwordResetAvailable } from "../lib/mail.js";
 import { isEmailVerificationOn } from "../lib/settings.js";
 import { env } from "../config/env.js";
 import { HttpError, badRequest } from "../lib/http.js";
@@ -178,6 +179,90 @@ router.post("/signup/resend", authLimiter, async (req, res) => {
   res.json({ verification: verificationInfo(pending) });
 });
 
+// ---------- Forgot password ----------
+// 1. POST /password/forgot emails a 6-digit code. The reply is the same whether or
+//    not the email has an account, so the form can't reveal who is registered.
+// 2. POST /password/reset checks the code, sets the new password, signs this device
+//    in and every other device out.
+
+const resetHash = (email, code) => hashCode(`reset:${email}`, code);
+const genericResetReply = (email) => ({
+  reset: { email, expiresInSeconds: CODE_MINUTES * 60, resendInSeconds: RESEND_AFTER_SECONDS },
+});
+
+router.post("/password/forgot", authLimiter, async (req, res) => {
+  if (!passwordResetAvailable()) {
+    throw new HttpError(503, "Password reset by email isn't available right now. Please ask an admin for help.");
+  }
+  const email = readEmail(req.body);
+  if (!EMAIL_RE.test(email)) throw badRequest("Please enter a valid email address");
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(202).json(genericResetReply(email));
+
+  const existing = await PasswordReset.findOne({ email });
+  if (existing) {
+    const wait = verificationInfo(existing).resendInSeconds;
+    if (wait > 0) throw new HttpError(429, `A code was just sent. Please wait ${wait} seconds before asking for another.`, { retryAfter: wait });
+    if (existing.sends >= MAX_SENDS) throw new HttpError(429, "Too many codes requested for this email. Please try again in a few minutes.");
+  }
+
+  const code = newCode();
+  const reset = await PasswordReset.findOneAndUpdate(
+    { email },
+    {
+      codeHash: resetHash(email, code),
+      attempts: 0,
+      sends: (existing?.sends || 0) + 1,
+      lastSentAt: new Date(),
+      expiresAt: new Date(Date.now() + CODE_MINUTES * 60 * 1000),
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+  try {
+    await sendMail({ to: email, ...passwordResetEmail({ name: user.fullName, code, minutes: CODE_MINUTES }) });
+  } catch (err) {
+    console.error("[mail] password reset email failed:", err.message);
+    if (!existing) await PasswordReset.deleteOne({ _id: reset._id });
+    throw new HttpError(502, "We couldn't send the email. Please try again in a moment.");
+  }
+  res.status(202).json(genericResetReply(email));
+});
+
+router.post("/password/reset", authLimiter, async (req, res) => {
+  const email = readEmail(req.body);
+  const code = String(req.body.code || "").replace(/\s+/g, "");
+  const { newPassword } = req.body;
+
+  if (!/^\d{6}$/.test(code)) throw badRequest("Enter the 6-digit code from the email", { code: "Enter the 6-digit code" });
+  validatePassword(newPassword);
+
+  const reset = await PasswordReset.findOne({ email });
+  if (!reset || reset.expiresAt < new Date()) {
+    throw new HttpError(410, "This code has expired or isn't valid. Please request a new one.");
+  }
+  if (!sameHash(resetHash(email, code), reset.codeHash)) {
+    reset.attempts += 1;
+    const left = MAX_ATTEMPTS - reset.attempts;
+    if (left <= 0) {
+      await reset.deleteOne();
+      throw new HttpError(429, "Too many wrong codes. Please request a new code.");
+    }
+    await reset.save();
+    throw badRequest(`That code isn't right. ${left} ${left === 1 ? "try" : "tries"} left.`, { code: "Incorrect code" });
+  }
+
+  const user = await User.findOne({ email });
+  await reset.deleteOne();
+  if (!user) throw new HttpError(410, "This code has expired or isn't valid. Please request a new one.");
+
+  await user.setPassword(newPassword); // also signs out every other device
+  user.lastLoginAt = new Date();
+  await user.save();
+  setSession(res, user);
+  res.json({ user: user.toPublic() });
+});
+
 router.post("/login", authLimiter, async (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const user = await User.findOne({ email }).select("+password");
@@ -218,6 +303,7 @@ router.post("/me/password", requireAuth, async (req, res) => {
   validatePassword(req.body.newPassword);
   await user.setPassword(req.body.newPassword);
   await user.save();
+  setSession(res, user); // fresh session here; other devices are signed out
   res.json({ ok: true });
 });
 

@@ -34,6 +34,18 @@ export const useAuth = create((set) => ({
     return data.user;
   },
 
+  // Forgot password: request a code, then set a new password with it (signs in).
+  async requestPasswordReset(email) {
+    const { data } = await api.post("/auth/password/forgot", { email });
+    return data.reset;
+  },
+
+  async resetPassword(email, code, newPassword) {
+    const { data } = await api.post("/auth/password/reset", { email, code, newPassword });
+    set({ user: data.user });
+    return data.user;
+  },
+
   async resendSignupCode(email) {
     const { data } = await api.post("/auth/signup/resend", { email });
     return data.verification;

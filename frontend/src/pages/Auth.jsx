@@ -66,6 +66,7 @@ function PasswordInput(props) {
 
 export function Login() {
   const login = useAuth((s) => s.login);
+  const meta = useMeta((s) => s.meta);
   const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -98,6 +99,13 @@ export function Login() {
         <Field label="Password">
           {(id) => <PasswordInput id={id} autoComplete="current-password" required value={form.password} onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, password: v })); }} />}
         </Field>
+        {meta?.passwordReset && (
+          <div className="-mt-2 text-right">
+            <Link to="/forgot-password" state={{ ...location.state, email: form.email }} className="text-sm font-medium text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+        )}
         <Button type="submit" className="w-full" size="lg" loading={busy}>Sign in</Button>
       </form>
     </AuthShell>
@@ -253,5 +261,114 @@ function VerifyCode({ verification, onVerified, onRestart }) {
         </>
       )}
     </form>
+  );
+}
+
+// Forgot password: ask for the email, then the emailed code and a new password.
+export function ForgotPassword() {
+  const requestPasswordReset = useAuth((s) => s.requestPasswordReset);
+  const resetPassword = useAuth((s) => s.resetPassword);
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.email || "");
+  const [sent, setSent] = useState(null);
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [wait, setWait] = useState(0);
+
+  useEffect(() => {
+    if (wait <= 0) return;
+    const t = setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+
+  const requestCode = async (e) => {
+    e?.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const info = await requestPasswordReset(email.trim());
+      setSent(info);
+      setWait(info.resendInSeconds);
+      if (e === undefined) toast.success("A new code is on its way");
+    } catch (err) {
+      setError(errorMessage(err));
+      const retry = err?.response?.data?.details?.retryAfter;
+      if (retry) setWait(retry);
+    }
+    setBusy(false);
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(code)) return setError("Enter the 6-digit code from the email");
+    if (password.length < 8) return setError("New password must be at least 8 characters");
+    setBusy(true);
+    setError("");
+    try {
+      await resetPassword(sent.email, code, password);
+      toast.success("Password updated. You're signed in.");
+    } catch (err) {
+      setError(errorMessage(err));
+      if (err?.response?.status === 410 || err?.response?.status === 429) setCode("");
+      setBusy(false);
+    }
+  };
+
+  const footer = <>Remembered it? <Link to="/login" state={location.state} className="font-medium text-primary hover:underline">Sign in</Link></>;
+  const alert = error && <div role="alert" className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</div>;
+
+  if (!sent) {
+    return (
+      <AuthShell title="Reset your password" subtitle="Enter your account's email and we'll send you a code." footer={footer}>
+        <form onSubmit={requestCode} className="space-y-4" noValidate>
+          {alert}
+          <Field label="Email">
+            {(id) => <Input id={id} type="email" autoComplete="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />}
+          </Field>
+          <Button type="submit" className="w-full" size="lg" loading={busy}>Send code</Button>
+        </form>
+      </AuthShell>
+    );
+  }
+
+  return (
+    <AuthShell
+      title="Check your email"
+      subtitle={<>If an account exists for <span className="font-medium text-fg">{sent.email}</span>, we&apos;ve sent it a 6-digit code. Enter it with your new password.</>}
+      footer={<>Wrong email? <button onClick={() => { setSent(null); setError(""); setCode(""); }} className="font-medium text-primary hover:underline">Go back</button></>}
+    >
+      <form onSubmit={submit} className="space-y-4" noValidate>
+        {alert}
+        <Field label="Code" hint="Check your spam folder if it hasn't arrived in a minute.">
+          {(id) => (
+            <Input
+              id={id}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              maxLength={6}
+              placeholder="123456"
+              className="h-14 text-center font-mono text-2xl tracking-[0.5em] placeholder:tracking-[0.5em] placeholder:text-line-strong"
+            />
+          )}
+        </Field>
+        <Field label="New password" hint="At least 8 characters. You'll be signed out on other devices.">
+          {(id) => <PasswordInput id={id} autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />}
+        </Field>
+        <Button type="submit" className="w-full" size="lg" loading={busy}>Set new password</Button>
+        <p className="text-center text-sm text-muted">
+          Didn&apos;t get it?{" "}
+          {wait > 0 ? (
+            <span className="tabular-nums">Resend in {wait}s</span>
+          ) : (
+            <button type="button" onClick={() => requestCode()} className="font-medium text-primary hover:underline">Resend code</button>
+          )}
+        </p>
+      </form>
+    </AuthShell>
   );
 }

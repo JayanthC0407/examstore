@@ -3,6 +3,7 @@ import Paper from "../models/Paper.js";
 import { DEPARTMENTS, EXAM_TYPES, SEMESTERS } from "../config/catalog.js";
 import { env } from "../config/env.js";
 import { isEmailVerificationOn } from "../lib/settings.js";
+import { passwordResetAvailable } from "../lib/mail.js";
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.get("/", async (_req, res) => {
     years: years.sort((a, b) => b - a),
     allowedDomains: env.allowedDomains,
     emailVerification: await isEmailVerificationOn(),
+    passwordReset: passwordResetAvailable(),
     maxUploadMb: Math.round(env.maxUploadBytes / 1024 / 1024),
     stats: {
       papers: totals[0]?.papers || 0,

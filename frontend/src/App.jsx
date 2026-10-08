@@ -9,7 +9,7 @@ import { LogoMark } from "./components/Logo";
 import Home from "./pages/Home";
 import Browse from "./pages/Browse";
 import PaperDetail from "./pages/PaperDetail";
-import { Login, Signup } from "./pages/Auth";
+import { ForgotPassword, Login, Signup } from "./pages/Auth";
 import Account from "./pages/Account";
 import Contribute from "./pages/Contribute";
 import NotFound from "./pages/NotFound";
@@ -59,6 +59,7 @@ export default function App() {
           <Route element={<GuestOnly />}>
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<Signup />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
           </Route>
 
           <Route element={<RequireAuth />}>
