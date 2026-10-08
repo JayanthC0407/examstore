@@ -10,6 +10,10 @@ export const mailConfigured = Boolean(env.mail.apiKey && env.mail.fromEmail);
 // printed to the console. Whether sign-up asks for one is an admin setting (lib/settings.js).
 export const canSendCodes = mailConfigured || !env.isProd;
 
+// Set by the startup check when Brevo is configured but can't send (shown in Admin, Settings).
+let mailProblem = "";
+export const getMailProblem = () => mailProblem;
+
 export async function sendMail({ to, subject, text, html }) {
   if (!mailConfigured) {
     console.log(`[mail] not configured, so not sent. To: ${to} | ${subject}\n${text}\n`);
@@ -44,12 +48,25 @@ export async function verifyMail() {
     return;
   }
   try {
-    const res = await fetch(`${env.mail.apiUrl}/v3/account`, { headers: { "api-key": env.mail.apiKey, accept: "application/json" } });
+    const headers = { "api-key": env.mail.apiKey, accept: "application/json" };
+    const res = await fetch(`${env.mail.apiUrl}/v3/account`, { headers });
     if (res.status === 401) throw new Error("BREVO_API_KEY was rejected");
     if (!res.ok) throw new Error(`Brevo responded ${res.status}`);
+
+    // Brevo accepts a send request first and only rejects an unverified sender
+    // afterwards, so check MAIL_FROM up front instead of failing silently.
+    const senders = await fetch(`${env.mail.apiUrl}/v3/senders`, { headers }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    if (senders?.senders) {
+      const from = env.mail.fromEmail.toLowerCase();
+      const match = senders.senders.find((s) => s.email.toLowerCase() === from);
+      if (!match) throw new Error(`MAIL_FROM (${env.mail.fromEmail}) isn't a sender in this Brevo account. Use the exact address listed under Senders`);
+      if (!match.active) throw new Error(`MAIL_FROM (${env.mail.fromEmail}) hasn't been verified in Brevo yet. Click the link in Brevo's verification email`);
+    }
+    mailProblem = "";
     console.log(`[mail] using Brevo, sending from ${env.mail.fromEmail}`);
   } catch (err) {
-    console.error(`[mail] Brevo check failed (${err.message}). Sign-up emails will fail until this is fixed.`);
+    mailProblem = err.message;
+    console.error(`[mail] Brevo check failed: ${err.message}. Sign-up emails will fail until this is fixed.`);
   }
 }
 

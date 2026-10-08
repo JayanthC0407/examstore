@@ -6,7 +6,7 @@ import PaperRequest from "../models/PaperRequest.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { badRequest, notFound, escapeRegex, toInt } from "../lib/http.js";
 import { getSettings, updateSettings } from "../lib/settings.js";
-import { canSendCodes, mailConfigured } from "../lib/mail.js";
+import { canSendCodes, mailConfigured, getMailProblem } from "../lib/mail.js";
 import { env } from "../config/env.js";
 
 const router = Router();
@@ -77,7 +77,7 @@ async function settingsResponse() {
   return {
     emailVerification: s.emailVerification,
     updatedAt: s.updatedAt,
-    mail: { configured: mailConfigured, canSendCodes, mode: mailConfigured ? "brevo" : env.isProd ? "off" : "console" },
+    mail: { configured: mailConfigured, canSendCodes, mode: mailConfigured ? "brevo" : env.isProd ? "off" : "console", problem: getMailProblem() },
   };
 }
 

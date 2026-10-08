@@ -57,7 +57,7 @@ export default function Settings() {
   if (!settings) return <Spinner className="py-16" label="Loading settings" />;
 
   const note = MAIL_NOTE[settings.mail.mode];
-  const active = settings.emailVerification && settings.mail.canSendCodes;
+  const active = settings.emailVerification && settings.mail.canSendCodes && !settings.mail.problem;
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -86,6 +86,11 @@ export default function Settings() {
               <Badge tone={active ? "success" : "neutral"}>{active ? "Active: sign-ups need a code" : "Inactive: sign-ups don't need a code"}</Badge>
               <Badge tone={note.tone}>{note.text}</Badge>
             </div>
+            {settings.mail.problem && (
+              <p role="alert" className="mt-3 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+                <span className="font-semibold">Emails can&apos;t be sent:</span> {settings.mail.problem}. Until it&apos;s fixed, sign-up works without a code. Fix the setting on the server, then restart it.
+              </p>
+            )}
             {settings.updatedAt && <p className="mt-3 text-xs text-subtle">Last changed {formatDate(settings.updatedAt)}</p>}
           </div>
         </div>
